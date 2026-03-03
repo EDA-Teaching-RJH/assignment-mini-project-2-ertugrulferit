@@ -1,2 +1,4 @@
 [MECH-3245] Wrench - Mfr: Dewalt | Material: Steel | Weight: 0.0kg
 [JFUR-2345] ACX - Mfr: ACD | Material: PVC | Weight: 4.0kg
+[MECH-7654] YIG - Mfr: OPC | Material: PAT | Weight: 0.0kg
+[JHGF-8767] L - Mfr: L | Material: L | Weight: 76.0kg

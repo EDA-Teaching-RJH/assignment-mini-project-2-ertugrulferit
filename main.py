@@ -14,11 +14,14 @@ def main():
             name = input("Enter Name: ")
             mfr = input("Enter Manufacturer: ")
             mat = input("Enter Material: ")
-           
-            weight_input = input("Enter Weight (kg): ")
-            weight = float(weight_input)
-            
-            # Create the object using class
+
+            try:
+                weight_input = input("Enter Weight (kg): ")
+                weight = float(weight_input)
+            except ValueError:
+                print("Invalid weight! Setting weight to 0.0.")
+                weight = 0.0
+                
             part = MechanicalPart(pid, name, mfr, mat, weight)
             with open("inventory.txt", "a") as file:
                 file.write(part.get_details() + "\n")
