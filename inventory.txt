@@ -1,0 +1,2 @@
+[MECH-3245] Wrench - Mfr: Dewalt | Material: Steel | Weight: 0.0kg
+[JFUR-2345] ACX - Mfr: ACD | Material: PVC | Weight: 4.0kg

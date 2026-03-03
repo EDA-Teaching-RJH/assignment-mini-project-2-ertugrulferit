@@ -1,5 +1,6 @@
-from models import MechanicalPart
 from utils import validate_part_id
+from models import MechanicalPart
+
 def main():
     print("--- Engineering Inventory System ---")
 
@@ -10,14 +11,22 @@ def main():
             break
             
         if validate_part_id(pid):
-            # If the ID is good, ask for the rest of the details
             name = input("Enter Name: ")
             mfr = input("Enter Manufacturer: ")
             mat = input("Enter Material: ")
+           
+            weight_input = input("Enter Weight (kg): ")
+            weight = float(weight_input)
             
             # Create the object using class
-            part = MechanicalPart(pid, name, mfr, mat, 0.0)
-            print("\nSUCCESS: Part Created!")
+            part = MechanicalPart(pid, name, mfr, mat, weight)
+            with open("inventory.txt", "a") as file:
+                file.write(part.get_details() + "\n")
+
+            print("\nSUCCESS: Part Created and Saved to file!")
             print(part.get_details())
         else:
             print(f"\nERROR: '{pid}' is not a valid format. Use XXXX-1111.")
+
+if __name__ == "__main__":
+    main()
