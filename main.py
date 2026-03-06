@@ -1,35 +1,53 @@
-from utils import validate_part_id
+from utils import is_valid_part_id
 from models import MechanicalPart
 
-def main():
-    print("--- Engineering Inventory System ---")
-
-    while True:
-        pid = input("\nEnter Part ID (or type 'exit' to quit): ")
+def show_report():
+    total_m = 0
+    total_c = 0
+    try:
+        with open("registry.csv", "r") as f:
+            for line in f:
+# Unpack the CSV columns
+                _, _, _, mass, co2 = line.strip().split(",")
+                total_m += float(mass)
+                total_c += float(co2)
         
-        if pid.lower() == 'exit':
-            break
-            
-        if validate_part_id(pid):
-            name = input("Enter Name: ")
-            mfr = input("Enter Manufacturer: ")
-            mat = input("Enter Material: ")
+        print("\n--- PROJECT SUMMARY ---")
+        print(f"Total System Mass: {total_m:.2f} kg")
+        print(f"Total Carbon Footprint: {total_c:.2f} kg CO2e")
+    except FileNotFoundError:
+        print("\n[!] No data found. Please add a part first.")
+
+def main():
+    while True:
+        print("\n1. Log New Part\n2. View Project Totals\n3. Exit")
+        cmd = input("Select action: ")
+
+        if cmd == "1":
+            uid = input("Enter ID (e.g. MECH-1234): ")
+            if not is_valid_part_id(uid):
+                print("Invalid format. Use XXXX-0000.")
+                continue
 
             try:
-                weight_input = input("Enter Weight (kg): ")
-                weight = float(weight_input)
-            except ValueError:
-                print("Invalid weight! Setting weight to 0.0.")
-                weight = 0.0
-                
-            part = MechanicalPart(pid, name, mfr, mat, weight)
-            with open("inventory.txt", "a") as file:
-                file.write(part.get_details() + "\n")
+                name = input("Part Name:")
+                brand = input("Manufacturer:")
+                mat = input("Material (Steel/Aluminum/Titanium):")
+                vol = float(input("Design Volume (m^3):"))
 
-            print("\nSUCCESS: Part Created and Saved to file!")
-            print(part.get_details())
-        else:
-            print(f"\nERROR: '{pid}' is not a valid format. Use XXXX-1111.")
+                part = MechanicalPart(uid, name, brand, mat, vol)
+                
+                with open("registry.csv", "a") as f:
+                    f.write(part.to_csv_format() + "\n")
+                
+                print(f"Success: {part.name} logged.")
+            except ValueError:
+                print("Error: Volume must be a numeric value.")
+
+        elif cmd == "2":
+            show_report()
+        elif cmd == "3":
+            break
 
 if __name__ == "__main__":
     main()
