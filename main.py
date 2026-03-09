@@ -1,4 +1,3 @@
-
 from utils import is_valid_part_id
 from models import MechanicalPart
 
@@ -9,7 +8,7 @@ def show_report():
     try:
         with open("registry.csv", "r") as f:
             for line in f:
-                if not line.strip(): continue # Skip empty lines
+                if not line.strip(): continue 
                 _, _, _, mass, co2 = line.strip().split(",")
                 total_m += float(mass)
                 total_c += float(co2)
@@ -24,23 +23,23 @@ def load_existing_data():
     """Hydrates the system with existing parts from the CSV."""
     parts_list = []
     try:
-        with open("data.csv", "r") as f:
+        with open("registry.csv", "r") as f: 
             for line in f:
                 if not line.strip(): continue
-                # We rebuild the Object from the CSV strings
                 d = line.strip().split(",")
-                # Mapping CSV columns back to MechanicalPart(id, name, brand, mat, vol)
-                # Note: We simulate volume as 0.0 since we don't store it, or you can add it to CSV!
                 p = MechanicalPart(d[0], d[1], "N/A", d[2], 0.0)
                 parts_list.append(p)
-        print(f"--- System Restored: {len(parts_list)} parts loaded ---")
+        print(f"\n[System Boot] {len(parts_list)} existing records loaded.")
     except FileNotFoundError:
-        pass
+        print("\n[System Boot] No existing registry found. Starting fresh.")
     return parts_list
 
 def main():
+    # RUN HYDRATION AT STARTUP
+    current_inventory = load_existing_data()
+
     while True:
-        print("\n1. Log New Part\n2. View Project Totals\n3. Exit")
+        print("\n1. Log New Part\n2. View Project Totals\n3. Search Parts\n4. Exit")
         choice = input("Select an option: ")
 
         if choice == "1":
@@ -60,16 +59,31 @@ def main():
                 with open("registry.csv", "a") as f:
                     f.write(part.to_csv_format() + "\n")
                 
-                print(f"Success: {part.name} recorded at {part.get_mass()}kg.")
+                # Add to the live inventory list too!
+                current_inventory.append(part)
+                print(f"Success: {part.name} recorded.")
             except ValueError:
                 print("Error: Volume must be a number.")
 
         elif choice == "2":
             show_report()
-        elif choice == "3":
+
+        elif choice == "3": # Changed from 3 to 3 (Search)
+            search_name = input("Enter part name to search: ").lower()
+            found = False
+            try:
+                with open("registry.csv", "r") as f:
+                    for line in f:
+                        if search_name in line.lower():
+                            print(f"Found Match: {line.strip()}")
+                            found = True
+                if not found: print("No matching parts in registry.")
+            except FileNotFoundError:
+                print("Registry is empty.")
+
+        elif choice == "4": # Changed from 3 to 4 (Exit)
             print("Closing system...")
             break
-
 
 if __name__ == "__main__":
     main()
