@@ -1,3 +1,4 @@
+
 from utils import is_valid_part_id
 from models import MechanicalPart
 
@@ -18,6 +19,24 @@ def show_report():
         print(f"Total Carbon Footprint: {total_c:.2f} kg CO2e")
     except FileNotFoundError:
         print("\n[!] No data found. Log a part first.")
+
+def load_existing_data():
+    """Hydrates the system with existing parts from the CSV."""
+    parts_list = []
+    try:
+        with open("data.csv", "r") as f:
+            for line in f:
+                if not line.strip(): continue
+                # We rebuild the Object from the CSV strings
+                d = line.strip().split(",")
+                # Mapping CSV columns back to MechanicalPart(id, name, brand, mat, vol)
+                # Note: We simulate volume as 0.0 since we don't store it, or you can add it to CSV!
+                p = MechanicalPart(d[0], d[1], "N/A", d[2], 0.0)
+                parts_list.append(p)
+        print(f"--- System Restored: {len(parts_list)} parts loaded ---")
+    except FileNotFoundError:
+        pass
+    return parts_list
 
 def main():
     while True:
@@ -50,6 +69,7 @@ def main():
         elif choice == "3":
             print("Closing system...")
             break
+
 
 if __name__ == "__main__":
     main()

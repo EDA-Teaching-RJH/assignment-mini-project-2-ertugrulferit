@@ -1,3 +1,13 @@
+class MechanicalPart:
+    """
+    Represents a physical mechanical component with sustainability tracking.
+    
+    Attributes:
+        uid (str): Unique ISO-standard identifier.
+        name (str): The common name of the part.
+        material (str): Used to look up density and CO2 factors.
+        volume (float): Measured in cubic meters.
+    """
 class BaseComponent:
     def __init__(self, uid, name, brand):
         self.uid = uid
