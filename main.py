@@ -1,6 +1,6 @@
 """
 main.py — Mechanical Component Inventory & Sustainability Tracker
-VERSION: 2.3.0 (Standard Library Edition)
+VERSION: 2.4.0 (Standard Library Edition)
 
 This module provides a robust CLI for engineering asset management.
 It uses only Python's built-in libraries to ensure maximum portability.
@@ -13,7 +13,7 @@ import random   # For simulating dynamic market price fluctuations
 import datetime # For recording high-precision timestamps
 
 from utils import is_valid_part_id
-from models import MechanicalPart
+from models import StandardPart, CustomComponent, MechanicalPart
 
 def get_market_simulation(material):
     """
@@ -30,7 +30,6 @@ def get_market_simulation(material):
 def compare_material_efficiency(current_part):
     """
     NEW FUNCTION: Analyzes the current part and suggests a material alternative.
-    Similar to the lecturer's 'Recommended Song' but uses engineering logic.
     """
     materials = ["STEEL", "ALUMINUM", "TITANIUM"]
     # Pick a random alternative that isn't the current material
@@ -47,13 +46,36 @@ def compare_material_efficiency(current_part):
         print(f"Consider {suggestion} for different thermal properties.")
     print("--------------------------------------------------")
 
+def calculate_material_ratios(inventory):
+    """
+    NEW FEATURE: Generates a visual distribution chart of materials used.
+    """
+    if not inventory:
+        print("\n[!] No parts available for ratio analysis.")
+        return
+
+    print("\n" + "█"*45)
+    print(f"{'MATERIAL DISTRIBUTION ANALYSIS':^45}")
+    print("█"*45)
+    
+    counts = {}
+    for p in inventory:
+        counts[p.material] = counts.get(p.material, 0) + 1
+    
+    for mat, count in counts.items():
+        percent = (count / len(inventory)) * 100
+        bar = "■" * int(percent / 5)
+        print(f"{mat:<10} | {bar:<20} | {percent:>5.1f}%")
+    print("█"*45)
+
 def validate_registry(file="registry.csv"):
     """Defensive check to ensure the data persistence layer is initialized."""
     if not os.path.exists(file):
         try:
             with open(file, "w", newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(["ID", "Name", "Material", "Mass_kg", "CO2_kg", "Timestamp"])
+                # Added 'Type' and 'Extra' columns to match SDS inheritance logic
+                writer.writerow(["Type", "ID", "Name", "Material", "Mass_kg", "CO2_kg", "MetaData"])
             print(f"[!] System: Initialized fresh registry at {file}")
             return True
         except Exception as e:
@@ -62,7 +84,9 @@ def validate_registry(file="registry.csv"):
     return True
 
 def load_existing_data(file="registry.csv"):
-    """Synchronizes the in-memory state with the CSV storage (Hydration)."""
+    """
+    SDS-Style Hydrator: Detects Part Type and recreates specific subclasses.
+    """
     parts_list = []
     if not os.path.exists(file): return []
     
@@ -71,8 +95,12 @@ def load_existing_data(file="registry.csv"):
             reader = csv.reader(f)
             next(reader) 
             for row in reader:
-                if not row or len(row) < 5: continue
-                p = MechanicalPart(row[0], row[1], "N/A", row[2], 0.0)
+                if not row or len(row) < 7: continue
+                # Logic to rebuild specific subclass based on the 'Type' column
+                if row[0] == "STD":
+                    p = StandardPart(row[1], row[2], "N/A", row[3], 0.0, row[6])
+                else:
+                    p = CustomComponent(row[1], row[2], "N/A", row[3], 0.0, row[6])
                 parts_list.append(p)
         print(f"[System Boot] {len(parts_list)} records synchronized.")
     except Exception as e:
@@ -90,8 +118,8 @@ def show_report(file="registry.csv"):
         reader = csv.reader(f)
         next(reader)
         for row in reader:
-            total_m += float(row[3])
-            total_c += float(row[4])
+            total_m += float(row[4])
+            total_c += float(row[5])
             count += 1
             
     print("\n" + "="*45)
@@ -118,14 +146,15 @@ def main():
 
     while True:
         print("\n--- MECHANICAL INVENTORY CONTROL SYSTEM ---")
-        print("1. Log New Component")
-        print("2. Generate Sustainability Report")
-        print("3. Component Search Engine")
-        print("4. System Shutdown")
+        print("1. Log Standard Component")
+        print("2. Log Custom Component")
+        print("3. Generate Sustainability Report")
+        print("4. View Material Analytics")
+        print("5. System Shutdown")
         
-        choice = input("\nSelect Action (1-4): ").strip()
+        choice = input("\nSelect Action (1-5): ").strip()
 
-        if choice == "1":
+        if choice in ["1", "2"]:
             uid = input("Enter Serial ID (XXXX-0000): ").upper()
             if not is_valid_part_id(uid):
                 print(">> ERROR: Invalid ID format.")
@@ -137,17 +166,24 @@ def main():
                 mat = input("Material (Steel/Aluminum/Titanium): ")
                 vol = input("Design Volume (m^3): ")
                 
-                new_part = MechanicalPart(uid, name, brand, mat, vol)
+                if choice == "1":
+                    extra = input("Shelf Location: ")
+                    new_part = StandardPart(uid, name, brand, mat, vol, extra)
+                    p_type = "STD"
+                else:
+                    extra = input("Lead Time (Days): ")
+                    new_part = CustomComponent(uid, name, brand, mat, vol, extra)
+                    p_type = "CUSTOM"
                 
                 get_market_simulation(new_part.material)
-                
-                # --- CALL THE NEW COMPARISON FUNCTION ---
                 compare_material_efficiency(new_part)
 
                 with open("registry.csv", "a", newline='') as f:
                     writer = csv.writer(f)
-                    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                    writer.writerow(new_part.to_csv_format() + [now])
+                    # Saving type and meta-data to match SDS CSV structure
+                    writer.writerow([p_type, new_part.uid, new_part.name, 
+                                     new_part.material, new_part.get_mass(), 
+                                     new_part.get_carbon(), extra])
                 
                 inventory.append(new_part)
                 print(f"\n>> SUCCESS: {name} registered in system.")
@@ -155,21 +191,18 @@ def main():
             except ValueError as e:
                 print(f"\n>> VALIDATION ERROR: {e}")
 
-        elif choice == "2":
+        elif choice == "3":
             show_report()
 
-        elif choice == "3":
-            query = input("Search term: ").lower()
-            results = [p for p in inventory if query in p.name.lower() or query in p.uid.lower()]
-            print(f"\n--- Search Results ({len(results)} found) ---")
-            for p in results: print(p)
-
         elif choice == "4":
+            calculate_material_ratios(inventory)
+
+        elif choice == "5":
             print("Exporting state... Shutdown complete.")
             break
             
         else:
-            print("Invalid input. Please choose 1-4.")
+            print("Invalid input. Please choose 1-5.")
 
 if __name__ == "__main__":
     main()
