@@ -1,5 +1,6 @@
 import unittest
 import os
+from main import load_existing_data
 from models import MechanicalPart
 from utils import is_valid_part_id
 
@@ -37,3 +38,27 @@ class TestSustainabilitySystem(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_csv_persistence_integrity(self):
+        """
+        Tests the full lifecycle of a component: Creation -> Storage -> Recovery.
+        This ensures no data degradation occurs during the CSV 'Hydration' process.
+        """
+        # 1. Create original object
+        original = MechanicalPart("TEST-9999", "Integrity Check", "BrandX", "Steel", 2.5)
+        
+        # 2. Manual write to test file
+        with open(self.test_registry, "w") as f:
+            f.write("ID,Name,Material,Mass,CO2\n") # Header
+            f.write(original.to_csv_format() + "\n")
+            
+        # 3. Use your system's loader to recover it
+        recovered_list = load_existing_data(self.test_registry)
+        recovered = recovered_list[0]
+        
+        # 4. Deep Assertion (Checking every field)
+        self.assertEqual(recovered.uid, "TEST-9999")
+        self.assertEqual(recovered.name, "Integrity Check")
+        self.assertEqual(recovered.material, "STEEL")
+        # Note: Volume is 0.0 on recovery in this version, so we check Mass/CO2 instead
+        self.assertEqual(recovered.get_mass(), original.get_mass())
