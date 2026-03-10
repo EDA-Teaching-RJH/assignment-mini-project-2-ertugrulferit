@@ -15,6 +15,32 @@ import datetime # For recording high-precision timestamps
 from utils import is_valid_part_id
 from models import StandardPart, CustomComponent, MechanicalPart
 
+def print_success_crane():
+    """
+    Displays a large-scale engineering crane visual upon successful logging.
+    """
+    goofycrane = r"""
+              __________________________________________
+             |                                          |
+             |        COMPONENT LOGGED!!! :)            |
+             |__________________________________________|
+                   | |                          | |
+             ______| |__________________________| |__________
+            |                                                |
+            |   [ CONSTRUCTION IN PROGRESS - DATA SAVED ]    |
+            |________________________________________________|
+                         | |                  | |
+                _________| |__________________| |_________
+               |                                          |
+               |        INVENTORY CONTROL SYSTEM          |
+               |__________________________________________|
+                          ||                  ||
+                          ||                  ||
+                 _________||__________________||_________
+                |________________________________________|
+    """
+    print (goofycrane)
+
 def get_market_simulation(material):
     """
     Simulates a live market price fetch using the random module.
