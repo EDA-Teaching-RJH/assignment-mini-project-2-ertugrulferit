@@ -1,9 +1,9 @@
 """
 main.py — Mechanical Component Inventory & Sustainability Tracker
-VERSION: 2.2.0 (Standard Library Edition)
+VERSION: 2.3.0 (Standard Library Edition)
 
 This module provides a robust CLI for engineering asset management.
-It uses only Python's built-in libraries
+It uses only Python's built-in libraries to ensure maximum portability.
 """
 
 import sys      # For command-line argument processing
@@ -20,7 +20,6 @@ def get_market_simulation(material):
     Simulates a live market price fetch using the random module.
     Demonstrates how to handle external data logic without dependencies.
     """
-    # Material price ranges per kg (Steel: 2-5, Aluminum: 5-10, Titanium: 20-50)
     price_map = {"STEEL": (2, 5), "ALUMINUM": (5, 10), "TITANIUM": (20, 50)}
     base_range = price_map.get(material.upper(), (1, 10))
     simulated_price = random.uniform(base_range[0], base_range[1])
@@ -28,13 +27,32 @@ def get_market_simulation(material):
     print(f"\n[Market Insight] Current {material} Index: ${simulated_price:.2f}/kg")
     return simulated_price
 
+def compare_material_efficiency(current_part):
+    """
+    NEW FUNCTION: Analyzes the current part and suggests a material alternative.
+    Similar to the lecturer's 'Recommended Song' but uses engineering logic.
+    """
+    materials = ["STEEL", "ALUMINUM", "TITANIUM"]
+    # Pick a random alternative that isn't the current material
+    alternatives = [m for m in materials if m != current_part.material]
+    suggestion = random.choice(alternatives)
+    
+    # Simple logic: Aluminum is always lighter than Steel
+    print(f"--- Engineering Suggestion for {current_part.name} ---")
+    if current_part.material == "STEEL" and suggestion == "ALUMINUM":
+        print(f"Switching to ALUMINUM could reduce mass by approx. 65%.")
+    elif suggestion == "TITANIUM":
+        print(f"TITANIUM would offer higher strength-to-weight for this component.")
+    else:
+        print(f"Consider {suggestion} for different thermal properties.")
+    print("--------------------------------------------------")
+
 def validate_registry(file="registry.csv"):
     """Defensive check to ensure the data persistence layer is initialized."""
     if not os.path.exists(file):
         try:
             with open(file, "w", newline='') as f:
                 writer = csv.writer(f)
-                # Professional header with metadata columns
                 writer.writerow(["ID", "Name", "Material", "Mass_kg", "CO2_kg", "Timestamp"])
             print(f"[!] System: Initialized fresh registry at {file}")
             return True
@@ -51,10 +69,9 @@ def load_existing_data(file="registry.csv"):
     try:
         with open(file, "r") as f:
             reader = csv.reader(f)
-            next(reader) # Skip the header metadata
+            next(reader) 
             for row in reader:
                 if not row or len(row) < 5: continue
-                # Hydrate the object (ID, Name, Brand, Material, Volume=0)
                 p = MechanicalPart(row[0], row[1], "N/A", row[2], 0.0)
                 parts_list.append(p)
         print(f"[System Boot] {len(parts_list)} records synchronized.")
@@ -86,7 +103,6 @@ def show_report(file="registry.csv"):
     print("="*45 + "\n")
 
 def main():
-    # --- Part 1: Command Line Interface (CLI) Mode (sys.argv) ---
     if len(sys.argv) > 1:
         mode = sys.argv[1].lower()
         if mode == "report":
@@ -97,7 +113,6 @@ def main():
             for p in inv: print(p)
             sys.exit()
 
-    # --- Part 2: Interactive Session Mode ---
     validate_registry()
     inventory = load_existing_data()
 
@@ -122,13 +137,13 @@ def main():
                 mat = input("Material (Steel/Aluminum/Titanium): ")
                 vol = input("Design Volume (m^3): ")
                 
-                # Create object and trigger validations
                 new_part = MechanicalPart(uid, name, brand, mat, vol)
                 
-                # Fetch simulated market data
                 get_market_simulation(new_part.material)
+                
+                # --- CALL THE NEW COMPARISON FUNCTION ---
+                compare_material_efficiency(new_part)
 
-                # Append to CSV
                 with open("registry.csv", "a", newline='') as f:
                     writer = csv.writer(f)
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
