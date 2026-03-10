@@ -1,186 +1,160 @@
 """
 main.py — Mechanical Component Inventory & Sustainability Tracker
-VERSION: 2.1.0 (SDS-Aligned Edition)
+VERSION: 2.2.0 (Standard Library Edition)
+
+This module provides a robust CLI for engineering asset management.
+It uses only Python's built-in libraries
 """
 
-import os
-import csv
-import sys
-import datetime
-import requests
-import cowsay
-import random
+import sys      # For command-line argument processing
+import csv      # For high-integrity CSV data handling
+import os       # For defensive file-system operations
+import random   # For simulating dynamic market price fluctuations
+import datetime # For recording high-precision timestamps
+
 from utils import is_valid_part_id
 from models import MechanicalPart
 
-def get_material_market_price(material):
+def get_market_simulation(material):
     """
-    Simulates fetching live market data via an API (Mimics SDS song logic).
+    Simulates a live market price fetch using the random module.
+    Demonstrates how to handle external data logic without dependencies.
     """
-    try:
-        # We simulate an API call to a metals exchange
-        # url = f"https://api.example.com/market/{material}"
-        price = random.uniform(2.5, 15.0) 
-        print(f"Current Market Price for {material}: ${price:.2f}/kg")
-    except Exception:
-        pass # Silent fail just like SDS
+    # Material price ranges per kg (Steel: 2-5, Aluminum: 5-10, Titanium: 20-50)
+    price_map = {"STEEL": (2, 5), "ALUMINUM": (5, 10), "TITANIUM": (20, 50)}
+    base_range = price_map.get(material.upper(), (1, 10))
+    simulated_price = random.uniform(base_range[0], base_range[1])
+    
+    print(f"\n[Market Insight] Current {material} Index: ${simulated_price:.2f}/kg")
+    return simulated_price
 
 def validate_registry(file="registry.csv"):
-    """Ensures the database file exists with correct headers."""
+    """Defensive check to ensure the data persistence layer is initialized."""
     if not os.path.exists(file):
         try:
             with open(file, "w", newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(["ID", "Name", "Material", "Mass", "CO2", "Date_Added"])
-            print(f"[!] System: Initialized new registry database.")
+                # Professional header with metadata columns
+                writer.writerow(["ID", "Name", "Material", "Mass_kg", "CO2_kg", "Timestamp"])
+            print(f"[!] System: Initialized fresh registry at {file}")
+            return True
         except Exception as e:
-            print(f"File System Error: {e}")
+            print(f"CRITICAL FILE ERROR: {e}")
             return False
     return True
 
-def get_detailed_analytics(inventory):
-    """Adds a deep analysis layer over the object list."""
-    if not inventory:
-        print("Analytics unavailable: Inventory is empty.")
-        return
-
-    print("\n--- ADVANCED COMPONENT ANALYTICS ---")
-    materials_count = {}
-    for part in inventory:
-        materials_count[part.material] = materials_count.get(part.material, 0) + 1
-    
-    for mat, count in materials_count.items():
-        percentage = (count / len(inventory)) * 100
-        print(f"Material Distribution [{mat}]: {count} items ({percentage:.1f}%)")
-    
-    avg_mass = sum(p.get_mass() for p in inventory) / len(inventory)
-    print(f"Average Component Mass: {avg_mass:.2f} kg")
-    print("------------------------------------\n")
-
 def load_existing_data(file="registry.csv"):
-    """Parses the CSV and rebuilds objects in memory."""
+    """Synchronizes the in-memory state with the CSV storage (Hydration)."""
     parts_list = []
-    if not validate_registry(file):
-        return []
-
+    if not os.path.exists(file): return []
+    
     try:
         with open(file, "r") as f:
             reader = csv.reader(f)
-            next(reader) # Skip header
+            next(reader) # Skip the header metadata
             for row in reader:
-                if not row: continue
-                # Re-create object (ID, Name, Brand, Material, Volume)
+                if not row or len(row) < 5: continue
+                # Hydrate the object (ID, Name, Brand, Material, Volume=0)
                 p = MechanicalPart(row[0], row[1], "N/A", row[2], 0.0)
                 parts_list.append(p)
         print(f"[System Boot] {len(parts_list)} records synchronized.")
     except Exception as e:
-        print(f"Warning: Synchronization failed. {e}")
+        print(f"Synchronization Warning: {e}")
     return parts_list
 
 def show_report(file="registry.csv"):
-    """Generates the Project Sustainability Report."""
-    total_m = 0.0
-    total_c = 0.0
-    count = 0
-    try:
-        with open(file, "r") as f:
-            reader = csv.reader(f)
-            next(reader)
-            for row in reader:
-                total_m += float(row[3])
-                total_c += float(row[4])
-                count += 1
+    """Aggregates and formats the project sustainability report."""
+    total_m, total_c, count = 0.0, 0.0, 0
+    if not os.path.exists(file): 
+        print("\n[!] No data found to generate report.")
+        return
         
-        print("\n" + "╔" + "═"*38 + "╗")
-        print(f"║ {'PROJECT SUSTAINABILITY REPORT':^36} ║")
-        print("╠" + "═"*38 + "╣")
-        print(f"║ Total Components: {count:>18} ║")
-        print(f"║ Total System Mass: {total_m:>15.2f} kg ║")
-        print(f"║ Total CO2 Impact: {total_c:>16.2f} kg ║")
-        print("╚" + "═"*38 + "╝")
-    except Exception:
-        print("\n[!] Error: Registry empty or inaccessible.")
+    with open(file, "r") as f:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            total_m += float(row[3])
+            total_c += float(row[4])
+            count += 1
+            
+    print("\n" + "="*45)
+    print(f"{'PROJECT SUSTAINABILITY REPORT':^45}")
+    print("="*45)
+    print(f" Total Components Logged: {count:>15}")
+    print(f" Total System Mass:      {total_m:>12.2f} kg")
+    print(f" Total Carbon Footprint: {total_c:>12.2f} kg CO2e")
+    print("="*45 + "\n")
 
 def main():
-    # 1. Handle Command Line Arguments (SDS Style)
+    # --- Part 1: Command Line Interface (CLI) Mode (sys.argv) ---
     if len(sys.argv) > 1:
         mode = sys.argv[1].lower()
         if mode == "report":
             show_report()
-            return
+            sys.exit()
         elif mode == "list":
-            inventory = load_existing_data()
-            for p in inventory: print(p)
-            return
+            inv = load_existing_data()
+            for p in inv: print(p)
+            sys.exit()
 
-    # 2. Enter Interactive Mode
+    # --- Part 2: Interactive Session Mode ---
     validate_registry()
-    current_inventory = load_existing_data()
+    inventory = load_existing_data()
 
     while True:
         print("\n--- MECHANICAL INVENTORY CONTROL SYSTEM ---")
         print("1. Log New Component")
-        print("2. Run Project Sustainability Report")
-        print("3. Execute Component Search")
-        print("4. View Advanced Material Analytics")
-        print("5. System Shutdown")
+        print("2. Generate Sustainability Report")
+        print("3. Component Search Engine")
+        print("4. System Shutdown")
         
-        choice = input("\nSelect Action (1-5): ")
+        choice = input("\nSelect Action (1-4): ").strip()
 
         if choice == "1":
             uid = input("Enter Serial ID (XXXX-0000): ").upper()
             if not is_valid_part_id(uid):
-                print(">> ERROR: Invalid format.")
+                print(">> ERROR: Invalid ID format.")
                 continue
 
             try:
-                name = input("Part Name: ")
+                name = input("Part Designation: ")
                 brand = input("Manufacturer: ")
                 mat = input("Material (Steel/Aluminum/Titanium): ")
                 vol = input("Design Volume (m^3): ")
                 
-                new_part = MechanicalPart(uid, name, brand, mat, float(vol))
+                # Create object and trigger validations
+                new_part = MechanicalPart(uid, name, brand, mat, vol)
                 
-                # Market Data fetch (SDS Style)
-                get_material_market_price(new_part.material)
+                # Fetch simulated market data
+                get_market_simulation(new_part.material)
 
+                # Append to CSV
                 with open("registry.csv", "a", newline='') as f:
                     writer = csv.writer(f)
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-                    writer.writerow([
-                        new_part.uid, new_part.name, new_part.material, 
-                        new_part.get_mass(), new_part.get_carbon(), now
-                    ])
+                    writer.writerow(new_part.to_csv_format() + [now])
                 
-                current_inventory.append(new_part)
-                
-                # Celebration (SDS Style)
-                cowsay.cow(f"Success! {name} recorded.")
+                inventory.append(new_part)
+                print(f"\n>> SUCCESS: {name} registered in system.")
 
             except ValueError as e:
-                print(f">> SYSTEM ERROR: {e}")
+                print(f"\n>> VALIDATION ERROR: {e}")
 
         elif choice == "2":
             show_report()
 
         elif choice == "3":
             query = input("Search term: ").lower()
-            found = False
-            for p in current_inventory:
-                if query in p.name.lower() or query in p.uid.lower():
-                    print(f"-> Found: {p.uid} | {p.name} ({p.material})")
-                    found = True
-            if not found: print("No results.")
+            results = [p for p in inventory if query in p.name.lower() or query in p.uid.lower()]
+            print(f"\n--- Search Results ({len(results)} found) ---")
+            for p in results: print(p)
 
         elif choice == "4":
-            get_detailed_analytics(current_inventory)
-
-        elif choice == "5":
-            print("System Offline. Shutdown complete.")
+            print("Exporting state... Shutdown complete.")
             break
-        
+            
         else:
-            print("Invalid input.")
+            print("Invalid input. Please choose 1-4.")
 
 if __name__ == "__main__":
     main()
