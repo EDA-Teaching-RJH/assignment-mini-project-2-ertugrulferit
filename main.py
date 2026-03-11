@@ -1,6 +1,6 @@
 """
 main.py — Mechanical Component Inventory & Sustainability Tracker
-VERSION: 2.4.0 (Standard Library Edition)
+VERSION: 2.5.2 (Standard Library Edition)
 
 This module provides a robust CLI for engineering asset management.
 It uses only Python's built-in libraries to ensure maximum portability.
@@ -39,7 +39,7 @@ def print_success_crane():
                  _________||__________________||_________
                 |________________________________________|
     """
-    print (goofycrane)
+    print(goofycrane)
 
 def get_market_simulation(material):
     """
@@ -55,14 +55,12 @@ def get_market_simulation(material):
 
 def compare_material_efficiency(current_part):
     """
-    NEW FUNCTION: Analyzes the current part and suggests a material alternative.
+    Analyzes the current part and suggests a material alternative.
     """
     materials = ["STEEL", "ALUMINUM", "TITANIUM"]
-    # Pick a random alternative that isn't the current material
     alternatives = [m for m in materials if m != current_part.material]
     suggestion = random.choice(alternatives)
     
-    # Simple logic: Aluminum is always lighter than Steel
     print(f"--- Engineering Suggestion for {current_part.name} ---")
     if current_part.material == "STEEL" and suggestion == "ALUMINUM":
         print(f"Switching to ALUMINUM could reduce mass by approx. 65%.")
@@ -74,7 +72,7 @@ def compare_material_efficiency(current_part):
 
 def calculate_material_ratios(inventory):
     """
-    NEW FEATURE: Generates a visual distribution chart of materials used.
+    Generates a visual distribution chart of materials used.
     """
     if not inventory:
         print("\n[!] No parts available for ratio analysis.")
@@ -95,12 +93,10 @@ def calculate_material_ratios(inventory):
     print("█"*45)
 
 def validate_registry(file="registry.csv"):
-    """Defensive check to ensure the data persistence layer is initialized."""
     if not os.path.exists(file):
         try:
             with open(file, "w", newline='') as f:
                 writer = csv.writer(f)
-                # Added 'Type' and 'Extra' columns to match SDS inheritance logic
                 writer.writerow(["Type", "ID", "Name", "Material", "Mass_kg", "CO2_kg", "MetaData"])
             print(f"[!] System: Initialized fresh registry at {file}")
             return True
@@ -144,9 +140,10 @@ def show_report(file="registry.csv"):
         reader = csv.reader(f)
         next(reader)
         for row in reader:
-            total_m += float(row[4])
-            total_c += float(row[5])
-            count += 1
+            if len(row) >= 6:
+                total_m += float(row[4])
+                total_c += float(row[5])
+                count += 1
             
     print("\n" + "="*45)
     print(f"{'PROJECT SUSTAINABILITY REPORT':^45}")
@@ -206,13 +203,12 @@ def main():
 
                 with open("registry.csv", "a", newline='') as f:
                     writer = csv.writer(f)
-                    # Saving type and meta-data to match SDS CSV structure
                     writer.writerow([p_type, new_part.uid, new_part.name, 
                                      new_part.material, new_part.get_mass(), 
                                      new_part.get_carbon(), extra])
                 
                 inventory.append(new_part)
-                print(f"\n>> SUCCESS: {name} registered in system.")
+                print_success_crane() 
 
             except ValueError as e:
                 print(f"\n>> VALIDATION ERROR: {e}")
