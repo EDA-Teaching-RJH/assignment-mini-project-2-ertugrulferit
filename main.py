@@ -70,11 +70,11 @@ def compare_material_efficiency(current_part):
     
     print(f"--- Engineering Suggestion for {current_part.name} ---")
     if current_part.material == "STEEL" and suggestion == "ALUMINUM":
-        print(f"Switching to ALUMINUM could reduce mass by approx. 65%.")
+        print(f"Switching to ALUMINUM could reduce mass by approx. 65% while keeping the cost fairly low.")
     elif suggestion == "TITANIUM":
-        print(f"TITANIUM would offer higher strength-to-weight for this component.")
+        print(f"TITANIUM would offer higher strength-to-weight for this component. At a premium pricepoint, it may be justified for critical applications.")
     else:
-        print(f"Consider {suggestion} for different thermal properties.")
+        print(f"Consider {suggestion} for different thermal properties and cost effectiveness.")
     print("--------------------------------------------------")
 
 def calculate_material_ratios(inventory):
